@@ -23,17 +23,20 @@ jobs:
       - name: Install Python Dependencies
         run: pip install playwright opencv-python-headless numpy pandas
 
+      - name: Install Python Dependencies
+        run: pip install playwright opencv-python-headless numpy pandas pytz
+
       - name: Install Playwright Browsers
         run: playwright install chromium
 
       - name: Run GCC Extraction Script
         run: python gcc_logger.py
 
-      - name: Commit and Push Updated CSV
+      - name: Commit and Push Updates
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add phenocam_data.csv
-          # If there are no changes (e.g., stream failed), don't crash
-          git commit -m "Automated GCC update [skip ci]" || echo "No changes to commit"
+          git add latest_midday.jpg || true  # The "|| true" prevents a crash if it's not 12:00 PM yet
+          git commit -m "Automated GCC and Image update [skip ci]" || echo "No changes to commit"
           git push
