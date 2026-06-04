@@ -2,7 +2,7 @@ name: 30-Minute Phenocam Extraction
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # Triggers every 30 minutes
+    - cron: '0,30 * * * *'
   workflow_dispatch: # Allows you to run it manually from the GitHub website
 
 jobs:
