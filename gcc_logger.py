@@ -94,14 +94,13 @@ async def main():
                         round(stats['q75'], 4)
                     ])
                     
-                # Save the midday image with the ROI overlaid
-                if now.hour == 12 and now.minute < 30:
-                    # Find contours of the white mask
-                    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                    # Draw a green outline (0, 255, 0) with a thickness of 2 pixels
-                    cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
-                    cv2.imwrite("latest_midday.jpg", frame)
-                    print("Saved new latest_midday.jpg with ROI overlay.")
+                # ALWAYS save the latest image with the ROI overlaid
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
+                
+                # Overwrite the latest_image.jpg file
+                cv2.imwrite("latest_image.jpg", frame)
+                print("Saved new latest_image.jpg with ROI overlay.")
             else:
                 print("Error: No valid pixels found in mask.")
                 
