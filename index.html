@@ -27,11 +27,25 @@
         }
         .header {
             margin-bottom: 24px;
-            padding-bottom: 16px;
+            padding-bottom: 20px;
             border-bottom: 1px solid #e2e8f0;
         }
-        h1 { margin: 0 0 8px 0; color: var(--primary); font-size: 1.8rem; }
-        p { margin: 0; color: var(--text-muted); }
+        h1 { margin: 0 0 4px 0; color: var(--primary); font-size: 1.8rem; }
+        .author { margin: 0 0 12px 0; color: var(--text-muted); font-size: 0.95rem; }
+        .subtitle { margin: 0 0 16px 0; color: var(--text-main); }
+        
+        .live-link { 
+            display: inline-block; 
+            background-color: #ef4444; 
+            color: white; 
+            padding: 8px 16px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        .live-link:hover { background-color: #dc2626; }
         
         .dashboard-grid { 
             display: grid;
@@ -63,6 +77,12 @@
             text-align: center; 
             margin-top: 12px; 
         }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
         
         @media (max-width: 900px) {
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -74,16 +94,18 @@
 <div class="container">
     <div class="header">
         <h1>Hogan Courtyard Canopy Greenness</h1>
-        <p>Continuous monitoring of vegetation phenology and water stress (30-min intervals).</p>
+        <p class="author">Maintained by <strong>Mostafa Javadian</strong></p>
+        <p class="subtitle">Continuous monitoring of vegetation phenology and water stress (30-min intervals).</p>
+        <a href="https://hdontap.com/stream/178090/holy-cross-hogan-courtyard-live-webcam/" target="_blank" class="live-link">🔴 Watch Live Video Stream</a>
     </div>
     
     <div class="dashboard-grid">
         <div class="card">
             <h2 class="card-title">Latest Canopy ROI</h2>
             <div class="image-container">
-                <img id="phenocam-img" alt="Latest Midday Phenocam Image" onerror="this.src='https://via.placeholder.com/800x450?text=Waiting+for+next+midday+capture...'">
+                <img id="phenocam-img" alt="Latest Phenocam Image" onerror="this.src='https://via.placeholder.com/800x450?text=Waiting+for+next+capture...'">
             </div>
-            <div class="caption">Midday Capture (12:00 PM EST) with ROI Overlay</div>
+            <div class="caption">Latest Capture with ROI Overlay (Updates every 30 mins)</div>
         </div>
 
         <div class="card">
@@ -91,11 +113,15 @@
             <div id="plot-div" style="width:100%; height:400px;"></div>
         </div>
     </div>
+    
+    <div class="footer">
+        Data collected automatically via GitHub Actions & Playwright.
+    </div>
 </div>
 
 <script>
     // Bypass browser cache for the latest image
-    document.getElementById('phenocam-img').src = "latest_midday.jpg?t=" + new Date().getTime();
+    document.getElementById('phenocam-img').src = "latest_image.jpg?t=" + new Date().getTime();
 
     // Helper function to calculate a moving average for smoothing the trendline
     function calculateMovingAverage(data, windowSize) {
@@ -118,7 +144,7 @@
             
             // Extract X (timestamp) and Y (median GCC)
             const timestamps = data.map(row => row.timestamp).filter(t => t != null);
-            // Fallback to 'gcc' if 'gcc_median' doesn't exist yet from the old script runs
+            // Fallback to 'gcc' if 'gcc_median' doesn't exist yet from old runs
             const rawGcc = data.map(row => row.gcc_median !== undefined ? row.gcc_median : row.gcc).filter(g => g != null);
 
             // Calculate a 10-period moving average (approx 5 hours of data) to smooth diurnal noise
