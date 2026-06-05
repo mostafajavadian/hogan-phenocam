@@ -37,6 +37,6 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add phenocam_data.csv
-          git add latest_midday.jpg || true  # The "|| true" prevents a crash if it's not 12:00 PM yet
+          git add latest_image.jpg || true
           git commit -m "Automated GCC and Image update [skip ci]" || echo "No changes to commit"
           git push
