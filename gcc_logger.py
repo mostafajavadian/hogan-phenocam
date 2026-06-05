@@ -11,7 +11,7 @@ from playwright.async_api import async_playwright
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
-def calculate_masked_gcc(image, mask_path='canopy_mask.png'):
+def calculate_roi_stats(image, mask_path='canopy_mask.png'):
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     if mask is None:
         print("Warning: canopy_mask.png not found. Calculating full frame.")
@@ -24,7 +24,19 @@ def calculate_masked_gcc(image, mask_path='canopy_mask.png'):
     gcc = g / total
     valid_pixels = gcc[mask == 255]
     
-    return np.mean(valid_pixels)
+    if len(valid_pixels) == 0:
+        return None, mask
+        
+    stats = {
+        'mean': np.mean(valid_pixels),
+        'median': np.median(valid_pixels),
+        'min': np.min(valid_pixels),
+        'max': np.max(valid_pixels),
+        'q25': np.percentile(valid_pixels, 25),
+        'q75': np.percentile(valid_pixels, 75)
+    }
+    
+    return stats, mask
 
 async def get_live_m3u8(page_url):
     m3u8_url = None
@@ -47,7 +59,6 @@ async def main():
     webcam_url = "https://hdontap.com/stream/178090/holy-cross-hogan-courtyard-live-webcam/"
     csv_file = "phenocam_data.csv"
     
-    # Set timezone to US Eastern (Holy Cross, MA)
     eastern = pytz.timezone('US/Eastern')
     now = datetime.now(eastern)
     timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S')
@@ -62,20 +73,37 @@ async def main():
         cap.release()
         
         if ret:
-            gcc_val = calculate_masked_gcc(frame)
-            print(f"[{timestamp_str}] GCC Captured: {gcc_val:.4f}")
+            stats, mask = calculate_roi_stats(frame)
             
-            # Log to CSV
-            with open(csv_file, mode='a', newline='') as file:
-                writer = csv.writer(file)
-                if write_header:
-                    writer.writerow(["timestamp", "gcc"])
-                writer.writerow([timestamp_str, round(gcc_val, 4)])
+            if stats:
+                print(f"[{timestamp_str}] Median GCC: {stats['median']:.4f}")
                 
-            # NEW: Save the image ONLY if it is the 12:00 PM run
-            if now.hour == 12 and now.minute < 30:
-                cv2.imwrite("latest_midday.jpg", frame)
-                print("Saved new latest_midday.jpg")
+                # Log to CSV
+                with open(csv_file, mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    if write_header:
+                        writer.writerow(["timestamp", "gcc_mean", "gcc_median", "gcc_min", "gcc_max", "gcc_q25", "gcc_q75"])
+                    
+                    writer.writerow([
+                        timestamp_str, 
+                        round(stats['mean'], 4), 
+                        round(stats['median'], 4), 
+                        round(stats['min'], 4), 
+                        round(stats['max'], 4), 
+                        round(stats['q25'], 4), 
+                        round(stats['q75'], 4)
+                    ])
+                    
+                # Save the midday image with the ROI overlaid
+                if now.hour == 12 and now.minute < 30:
+                    # Find contours of the white mask
+                    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    # Draw a green outline (0, 255, 0) with a thickness of 2 pixels
+                    cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
+                    cv2.imwrite("latest_midday.jpg", frame)
+                    print("Saved new latest_midday.jpg with ROI overlay.")
+            else:
+                print("Error: No valid pixels found in mask.")
                 
         else:
             print("Failed to read frame.")
