@@ -6,6 +6,8 @@ import csv
 import numpy as np
 from datetime import datetime
 import pytz
+from astral import LocationInfo
+from astral.sun import elevation
 from playwright.async_api import async_playwright
 
 if sys.platform == 'win32':
@@ -65,6 +67,11 @@ async def main():
     
     write_header = not os.path.exists(csv_file)
 
+    # Calculate Solar Elevation for Worcester, MA
+    city = LocationInfo("Worcester", "Massachusetts", "US/Eastern", 42.2626, -71.8023)
+    sun_elev = elevation(city.observer, now)
+    is_daylight = sun_elev > 5.0  # Sun is at least 5 degrees above the horizon
+
     fresh_link = await get_live_m3u8(webcam_url)
     
     if fresh_link:
@@ -75,15 +82,13 @@ async def main():
         if ret:
             stats, mask = calculate_roi_stats(frame)
             
-            if stats:
-                print(f"[{timestamp_str}] Median GCC: {stats['median']:.4f}")
+            with open(csv_file, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                if write_header:
+                    writer.writerow(["timestamp", "gcc_mean", "gcc_median", "gcc_min", "gcc_max", "gcc_q25", "gcc_q75"])
                 
-                # Log to CSV
-                with open(csv_file, mode='a', newline='') as file:
-                    writer = csv.writer(file)
-                    if write_header:
-                        writer.writerow(["timestamp", "gcc_mean", "gcc_median", "gcc_min", "gcc_max", "gcc_q25", "gcc_q75"])
-                    
+                if is_daylight and stats:
+                    print(f"[{timestamp_str}] Daylight detected (Elev: {sun_elev:.1f}°). Median GCC: {stats['median']:.4f}")
                     writer.writerow([
                         timestamp_str, 
                         round(stats['mean'], 4), 
@@ -93,16 +98,16 @@ async def main():
                         round(stats['q25'], 4), 
                         round(stats['q75'], 4)
                     ])
-                    
-                # ALWAYS save the latest image with the ROI overlaid
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
-                
-                # Overwrite the latest_image.jpg file
-                cv2.imwrite("latest_image.jpg", frame)
-                print("Saved new latest_image.jpg with ROI overlay.")
-            else:
-                print("Error: No valid pixels found in mask.")
+                else:
+                    print(f"[{timestamp_str}] Nighttime/Twilight detected (Elev: {sun_elev:.1f}°). Skipping GCC calculation.")
+                    # Log the timestamp, but leave GCC columns empty
+                    writer.writerow([timestamp_str, "", "", "", "", "", ""])
+
+            # Always save the latest image with the ROI overlaid, even at night
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
+            cv2.imwrite("latest_image.jpg", frame)
+            print("Saved new latest_image.jpg with ROI overlay.")
                 
         else:
             print("Failed to read frame.")
