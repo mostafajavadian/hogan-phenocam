@@ -24,7 +24,7 @@ jobs:
         run: pip install playwright opencv-python-headless numpy pandas
 
       - name: Install Python Dependencies
-        run: pip install playwright opencv-python-headless numpy pandas pytz
+        run: pip install playwright opencv-python-headless numpy pandas pytz astral
 
       - name: Install Playwright Browsers
         run: playwright install chromium
