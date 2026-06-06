@@ -8,45 +8,56 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         :root {
-            --primary: #2e7d32;
-            --bg-color: #f8fafc;
+            --primary: #15803d;
+            --primary-light: #dcfce7;
+            --bg-color: #f1f5f9;
             --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --text-main: #0f172a;
+            --text-muted: #475569;
         }
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             margin: 0; 
-            padding: 20px; 
+            padding: 30px 20px; 
             background-color: var(--bg-color); 
             color: var(--text-main);
+            line-height: 1.5;
         }
         .container { 
             max-width: 1200px; 
             margin: 0 auto; 
         }
         .header {
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
         }
-        h1 { margin: 0 0 4px 0; color: var(--primary); font-size: 1.8rem; }
-        .author { margin: 0 0 12px 0; color: var(--text-muted); font-size: 0.95rem; }
-        .subtitle { margin: 0 0 16px 0; color: var(--text-main); }
+        h1 { margin: 0 0 8px 0; color: var(--primary); font-size: 2.2rem; font-weight: 700; }
+        .author { margin: 0 0 16px 0; color: var(--text-muted); font-size: 1.05rem; }
         
         .live-link { 
             display: inline-block; 
             background-color: #ef4444; 
             color: white; 
-            padding: 8px 16px; 
+            padding: 10px 20px; 
             text-decoration: none; 
-            border-radius: 6px; 
-            font-weight: bold;
-            font-size: 0.9rem;
-            transition: background-color 0.2s;
+            border-radius: 8px; 
+            font-weight: 600;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+            transition: all 0.2s;
         }
-        .live-link:hover { background-color: #dc2626; }
+        .live-link:hover { background-color: #dc2626; transform: translateY(-1px); }
         
+        .info-box {
+            background-color: var(--primary-light);
+            border-left: 5px solid var(--primary);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .info-box h3 { margin: 0 0 10px 0; color: var(--primary); font-size: 1.2rem; }
+        .info-box p { margin: 0; font-size: 0.95rem; color: #166534; }
+
         .dashboard-grid { 
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -55,32 +66,39 @@
         .card {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
             border: 1px solid #e2e8f0;
         }
         .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 1.2rem;
+            font-weight: 700;
             margin-top: 0;
             margin-bottom: 16px;
             color: var(--text-main);
         }
+        .image-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
         .image-container img { 
             width: 100%; 
-            border-radius: 8px; 
             display: block;
         }
         .caption { 
             font-size: 0.85rem; 
             color: var(--text-muted); 
             text-align: center; 
-            margin-top: 12px; 
+            margin-top: 16px; 
+            font-weight: 500;
         }
         .footer {
-            margin-top: 40px;
+            margin-top: 50px;
             text-align: center;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: var(--text-muted);
         }
         
@@ -95,27 +113,32 @@
     <div class="header">
         <h1>Hogan Courtyard Canopy Greenness</h1>
         <p class="author">Maintained by <strong>Mostafa Javadian</strong></p>
-        <p class="subtitle">Continuous monitoring of vegetation phenology and water stress (30-min intervals).</p>
         <a href="https://hdontap.com/stream/178090/holy-cross-hogan-courtyard-live-webcam/" target="_blank" class="live-link">🔴 Watch Live Video Stream</a>
+    </div>
+
+    <div class="info-box">
+        <h3>How do we measure "Greenness"?</h3>
+        <p>We are tracking plant health using a formula called the <strong>Green Chromatic Coordinate (GCC)</strong>. <br><br>
+        A camera captures light in three colors: Red, Green, and Blue. To figure out exactly how healthy the leaves are, we take the amount of <em>Green</em> light and divide it by the <em>Total</em> light (Red + Green + Blue). This simple math trick removes the confusing effects of shadows, clouds, and harsh sunlight, giving us a highly accurate tracker for seasonal plant growth!</p>
     </div>
     
     <div class="dashboard-grid">
         <div class="card">
-            <h2 class="card-title">Latest Canopy ROI</h2>
+            <h2 class="card-title">Live Sensor View</h2>
             <div class="image-container">
                 <img id="phenocam-img" alt="Latest Phenocam Image" onerror="this.src='https://via.placeholder.com/800x450?text=Waiting+for+next+capture...'">
             </div>
-            <div class="caption">Latest Capture with ROI Overlay (Updates every 30 mins)</div>
+            <div class="caption">Latest image. The green outline shows exactly which trees are being monitored.</div>
         </div>
 
         <div class="card">
-            <h2 class="card-title">Green Chromatic Coordinate (Median)</h2>
+            <h2 class="card-title">Daylight Greenness Trend (GCC)</h2>
             <div id="plot-div" style="width:100%; height:400px;"></div>
         </div>
     </div>
     
     <div class="footer">
-        Data collected automatically via GitHub Actions & Playwright.
+        Data collected automatically via GitHub Actions & Playwright. Nighttime data is excluded to preserve accuracy.
     </div>
 </div>
 
@@ -127,8 +150,7 @@
     function calculateMovingAverage(data, windowSize) {
         return data.map((val, index, arr) => {
             const start = Math.max(0, index - windowSize + 1);
-            const subset = arr.slice(start, index + 1).filter(x => x !== null);
-            if (subset.length === 0) return null;
+            const subset = arr.slice(start, index + 1);
             const sum = subset.reduce((a, b) => a + b, 0);
             return sum / subset.length;
         });
@@ -140,14 +162,19 @@
         header: true,
         dynamicTyping: true,
         complete: function(results) {
-            const data = results.data;
+            const rawData = results.data;
             
-            // Extract X (timestamp) and Y (median GCC)
-            const timestamps = data.map(row => row.timestamp).filter(t => t != null);
-            // Fallback to 'gcc' if 'gcc_median' doesn't exist yet from old runs
-            const rawGcc = data.map(row => row.gcc_median !== undefined ? row.gcc_median : row.gcc).filter(g => g != null);
+            // 1. FILTER OUT NIGHTTIME DATA: Only keep rows where GCC is a valid number
+            const validData = rawData.filter(row => {
+                let val = row.gcc_median !== undefined ? row.gcc_median : row.gcc;
+                return typeof val === 'number' && !isNaN(val);
+            });
+            
+            // 2. Extract X (timestamp) and Y (median GCC) from the filtered daylight data
+            const timestamps = validData.map(row => row.timestamp);
+            const rawGcc = validData.map(row => row.gcc_median !== undefined ? row.gcc_median : row.gcc);
 
-            // Calculate a 10-period moving average (approx 5 hours of data) to smooth diurnal noise
+            // 3. Calculate a 10-period moving average (approx 5 hours)
             const smoothedGcc = calculateMovingAverage(rawGcc, 10);
 
             // Trace 1: Raw Data (faint dots in the background)
@@ -156,17 +183,18 @@
                 y: rawGcc,
                 mode: 'markers',
                 name: 'Raw 30-min Median',
-                marker: { color: '#94a3b8', size: 4, opacity: 0.5 },
-                hoverinfo: 'skip'
+                marker: { color: '#cbd5e1', size: 5, opacity: 0.7 },
+                hoverinfo: 'y+x'
             };
 
-            // Trace 2: Smoothed Trendline (bold solid line)
+            // Trace 2: Smoothed Trendline (bold solid line connecting the days)
             const traceSmooth = {
                 x: timestamps,
                 y: smoothedGcc,
                 mode: 'lines',
                 name: 'Smoothed Trend',
-                line: { shape: 'spline', color: '#16a34a', width: 3 }
+                line: { shape: 'spline', color: '#15803d', width: 4 },
+                connectgaps: true 
             };
 
             const layout = {
@@ -175,10 +203,11 @@
                 legend: { orientation: "h", yanchor: "bottom", y: 1.02, xanchor: "right", x: 1 },
                 xaxis: { 
                     showgrid: true, 
-                    gridcolor: '#f1f5f9'
+                    gridcolor: '#f8fafc',
+                    tickformat: '%b %d\n%H:%M'
                 },
                 yaxis: { 
-                    title: 'GCC', 
+                    title: 'GCC (Median)', 
                     showgrid: true, 
                     gridcolor: '#f1f5f9',
                     zeroline: false
