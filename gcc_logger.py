@@ -22,17 +22,14 @@ def calculate_advanced_phenology(image, mask_path='canopy_mask.png'):
     # OpenCV loads images in BGR format
     b, g, r = cv2.split(image.astype(float))
     total = b + g + r
-    total[total == 0] = 1 # Prevent division by zero
+    total[total == 0] = 1 
     
     # Calculate Chromatic Coordinates
     gcc = g / total
     rcc = r / total
     bcc = b / total
-    
-    # Calculate Excess Green Index
     exg = (2 * g) - r - b
     
-    # Extract only the valid pixels within the canopy mask
     valid_mask = mask == 255
     
     if not np.any(valid_mask):
@@ -41,7 +38,7 @@ def calculate_advanced_phenology(image, mask_path='canopy_mask.png'):
     stats = {
         'gcc_mean': np.mean(gcc[valid_mask]),
         'gcc_median': np.median(gcc[valid_mask]),
-        'gcc_90th': np.percentile(gcc[valid_mask], 90), # The PhenoCam composite standard
+        'gcc_90th': np.percentile(gcc[valid_mask], 90),
         'rcc_median': np.median(rcc[valid_mask]),
         'bcc_median': np.median(bcc[valid_mask]),
         'exg_median': np.median(exg[valid_mask])
@@ -79,7 +76,7 @@ async def main():
     # Calculate Solar Elevation for Worcester, MA
     city = LocationInfo("Worcester", "Massachusetts", "US/Eastern", 42.2626, -71.8023)
     sun_elev = elevation(city.observer, now)
-    is_daylight = sun_elev > 5.0  # Sun is at least 5 degrees above the horizon
+    is_daylight = sun_elev > 5.0 
 
     fresh_link = await get_live_m3u8(webcam_url)
     
@@ -89,30 +86,29 @@ async def main():
         cap.release()
         
         if ret:
-            stats, mask = calculate_roi_stats(frame)
+            stats, mask = calculate_advanced_phenology(frame)
             
             with open(csv_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
                 if write_header:
-                    writer.writerow(["timestamp", "gcc_mean", "gcc_median", "gcc_min", "gcc_max", "gcc_q25", "gcc_q75"])
+                    writer.writerow(["timestamp", "gcc_mean", "gcc_median", "gcc_90th", "rcc_median", "bcc_median", "exg_median"])
                 
                 if is_daylight and stats:
-                    print(f"[{timestamp_str}] Daylight detected (Elev: {sun_elev:.1f}°). Median GCC: {stats['median']:.4f}")
+                    print(f"[{timestamp_str}] Daylight (Elev: {sun_elev:.1f}°). GCC 90th: {stats['gcc_90th']:.4f}")
                     writer.writerow([
                         timestamp_str, 
-                        round(stats['mean'], 4), 
-                        round(stats['median'], 4), 
-                        round(stats['min'], 4), 
-                        round(stats['max'], 4), 
-                        round(stats['q25'], 4), 
-                        round(stats['q75'], 4)
+                        round(stats['gcc_mean'], 4), 
+                        round(stats['gcc_median'], 4), 
+                        round(stats['gcc_90th'], 4), 
+                        round(stats['rcc_median'], 4), 
+                        round(stats['bcc_median'], 4),
+                        round(stats['exg_median'], 4)
                     ])
                 else:
-                    print(f"[{timestamp_str}] Nighttime/Twilight detected (Elev: {sun_elev:.1f}°). Skipping GCC calculation.")
-                    # Log the timestamp, but leave GCC columns empty
+                    print(f"[{timestamp_str}] Nighttime/Twilight (Elev: {sun_elev:.1f}°). Skipping data.")
                     writer.writerow([timestamp_str, "", "", "", "", "", ""])
 
-            # Always save the latest image with the ROI overlaid, even at night
+            # Always save the latest image with the ROI overlaid
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
             cv2.imwrite("latest_image.jpg", frame)
