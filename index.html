@@ -17,11 +17,8 @@
         }
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            padding: 30px 20px; 
-            background-color: var(--bg-color); 
-            color: var(--text-main);
-            line-height: 1.5;
+            margin: 0; padding: 30px 20px; 
+            background-color: var(--bg-color); color: var(--text-main); line-height: 1.5;
         }
         .container { max-width: 1200px; margin: 0 auto; }
         .header { margin-bottom: 30px; }
@@ -29,73 +26,43 @@
         .author { margin: 0 0 16px 0; color: var(--text-muted); font-size: 1.05rem; }
         
         .live-link { 
-            display: inline-block; 
-            background-color: #ef4444; 
-            color: white; 
-            padding: 10px 20px; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            font-weight: 600;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+            display: inline-block; background-color: #ef4444; color: white; 
+            padding: 10px 20px; text-decoration: none; border-radius: 8px; 
+            font-weight: 600; font-size: 0.95rem; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
             transition: all 0.2s;
         }
         .live-link:hover { background-color: #dc2626; transform: translateY(-1px); }
         
         .dashboard-grid { 
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 24px; 
-            margin-bottom: 30px;
+            display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 24px;
         }
         .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e2e8f0;
+            background: var(--card-bg); border-radius: 12px; padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;
         }
-        .card-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-top: 0;
-            margin-bottom: 16px;
-            color: var(--text-main);
-        }
-        .image-container {
-            position: relative;
-            width: 100%;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+        .card-title { font-size: 1.2rem; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: var(--text-main); }
+        .image-container { width: 100%; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .image-container img { width: 100%; display: block; }
-        .caption { 
-            font-size: 0.85rem; color: var(--text-muted); 
-            text-align: center; margin-top: 16px; font-weight: 500;
+        .caption { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 16px; font-weight: 500; }
+        
+        /* Optional RCC Section Styles */
+        .rcc-toggle-btn {
+            background-color: #e2e8f0; border: none; padding: 12px 24px; border-radius: 8px;
+            font-size: 1rem; font-weight: 600; color: var(--text-main); cursor: pointer;
+            width: 100%; text-align: left; transition: background-color 0.2s; margin-bottom: 20px;
         }
+        .rcc-toggle-btn:hover { background-color: #cbd5e1; }
+        .rcc-container { display: none; background: var(--card-bg); border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 24px; }
         
         .info-box {
-            background-color: var(--primary-light);
-            border-left: 5px solid var(--primary);
-            padding: 20px;
-            border-radius: 0 8px 8px 0;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background-color: var(--primary-light); border-left: 5px solid var(--primary);
+            padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 20px;
         }
         .info-box h3 { margin: 0 0 10px 0; color: var(--primary); font-size: 1.2rem; }
         .info-box p { margin: 0; font-size: 0.95rem; color: #166534; }
-
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
+        .footer { margin-top: 30px; text-align: center; font-size: 0.9rem; color: var(--text-muted); }
         
-        @media (max-width: 900px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -117,9 +84,16 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title">Daylight Canopy Trends (GCC & RCC)</h2>
-            <div id="plot-div" style="width:100%; height:400px;"></div>
+            <h2 class="card-title">Daylight Greenness Trend (GCC)</h2>
+            <div id="gcc-plot-div" style="width:100%; height:400px;"></div>
         </div>
+    </div>
+
+    <button class="rcc-toggle-btn" onclick="toggleRCC()">📊 View Autumn Redness (RCC) Tracker ▼</button>
+    <div id="rcc-container" class="rcc-container">
+        <h2 class="card-title">Daylight Redness Trend (RCC)</h2>
+        <p style="font-size: 0.9rem; color: #64748b; margin-top: -10px;">Tracks the degradation of chlorophyll and emergence of fall colors.</p>
+        <div id="rcc-plot-div" style="width:100%; height:300px;"></div>
     </div>
 
     <div class="info-box">
@@ -129,7 +103,7 @@
     </div>
     
     <div class="footer">
-        Data collected automatically via GitHub Actions & Playwright. Nighttime data is excluded to preserve accuracy.
+        Data collected automatically via GitHub Actions. Nighttime and statistical outlier data points are automatically excluded to preserve accuracy.
     </div>
 </div>
 
@@ -145,6 +119,17 @@
         });
     }
 
+    // Toggle RCC Chart Visibility
+    function toggleRCC() {
+        const container = document.getElementById('rcc-container');
+        if (container.style.display === 'none' || container.style.display === '') {
+            container.style.display = 'block';
+            Plotly.Plots.resize('rcc-plot-div'); // Fixes sizing issue when unhidden
+        } else {
+            container.style.display = 'none';
+        }
+    }
+
     Papa.parse("phenocam_data.csv", {
         download: true,
         header: true,
@@ -152,8 +137,12 @@
         complete: function(results) {
             const rawData = results.data;
             
-            // Filter out nighttime/empty rows
-            const validData = rawData.filter(row => typeof row.gcc_90th === 'number' && !isNaN(row.gcc_90th));
+            // FILTER OUT NIGHTTIME AND OUTLIERS
+            const validData = rawData.filter(row => 
+                typeof row.gcc_90th === 'number' && 
+                !isNaN(row.gcc_90th) && 
+                row.is_outlier !== 1 // Ignore flagged anomalies
+            );
             
             const timestamps = validData.map(row => row.timestamp);
             const rawGcc = validData.map(row => row.gcc_90th);
@@ -162,37 +151,43 @@
             const smoothedGcc = calculateMovingAverage(rawGcc, 10);
             const smoothedRcc = calculateMovingAverage(rawRcc, 10);
 
-            // GCC Traces (Green)
+            // GCC Traces (Main Plot)
             const traceRawGcc = {
                 x: timestamps, y: rawGcc, mode: 'markers',
                 name: 'Raw GCC (90th)', marker: { color: '#cbd5e1', size: 4, opacity: 0.7 }, hoverinfo: 'skip'
             };
             const traceSmoothGcc = {
                 x: timestamps, y: smoothedGcc, mode: 'lines',
-                name: 'Greenness (GCC)', line: { shape: 'spline', color: '#15803d', width: 3 }, connectgaps: true 
+                name: 'Smoothed Trend', line: { shape: 'spline', color: '#15803d', width: 4 }, connectgaps: true 
             };
 
-            // RCC Traces (Red)
+            // RCC Traces (Optional Plot)
             const traceRawRcc = {
                 x: timestamps, y: rawRcc, mode: 'markers',
-                name: 'Raw RCC (Median)', marker: { color: '#fca5a5', size: 4, opacity: 0.5 }, hoverinfo: 'skip'
+                name: 'Raw RCC', marker: { color: '#fca5a5', size: 4, opacity: 0.5 }, hoverinfo: 'skip'
             };
             const traceSmoothRcc = {
                 x: timestamps, y: smoothedRcc, mode: 'lines',
-                name: 'Redness (RCC)', line: { shape: 'spline', color: '#b91c1c', width: 2 }, connectgaps: true 
+                name: 'Smoothed Trend', line: { shape: 'spline', color: '#b91c1c', width: 3 }, connectgaps: true 
             };
 
-            const layout = {
+            const layoutBase = {
                 hovermode: 'x unified',
                 margin: { l: 50, r: 20, t: 10, b: 40 },
                 legend: { orientation: "h", yanchor: "bottom", y: 1.02, xanchor: "right", x: 1 },
                 xaxis: { showgrid: true, gridcolor: '#f8fafc', tickformat: '%b %d\n%H:%M' },
-                yaxis: { title: 'Chromatic Coordinate', showgrid: true, gridcolor: '#f1f5f9', zeroline: false },
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                paper_bgcolor: 'rgba(0,0,0,0)'
+                plot_bgcolor: 'rgba(0,0,0,0)', paper_bgcolor: 'rgba(0,0,0,0)'
             };
 
-            Plotly.newPlot('plot-div', [traceRawGcc, traceSmoothGcc, traceRawRcc, traceSmoothRcc], layout, {responsive: true});
+            // Render GCC Plot
+            let layoutGcc = JSON.parse(JSON.stringify(layoutBase));
+            layoutGcc.yaxis = { title: 'Green Chromatic Coordinate', showgrid: true, gridcolor: '#f1f5f9', zeroline: false };
+            Plotly.newPlot('gcc-plot-div', [traceRawGcc, traceSmoothGcc], layoutGcc, {responsive: true});
+
+            // Render RCC Plot
+            let layoutRcc = JSON.parse(JSON.stringify(layoutBase));
+            layoutRcc.yaxis = { title: 'Red Chromatic Coordinate', showgrid: true, gridcolor: '#f1f5f9', zeroline: false };
+            Plotly.newPlot('rcc-plot-div', [traceRawRcc, traceSmoothRcc], layoutRcc, {responsive: true});
         }
     });
 </script>
