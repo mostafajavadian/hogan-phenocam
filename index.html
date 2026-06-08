@@ -23,13 +23,8 @@
             color: var(--text-main);
             line-height: 1.5;
         }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-        }
-        .header {
-            margin-bottom: 30px;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { margin-bottom: 30px; }
         h1 { margin: 0 0 8px 0; color: var(--primary); font-size: 2.2rem; font-weight: 700; }
         .author { margin: 0 0 16px 0; color: var(--text-muted); font-size: 1.05rem; }
         
@@ -74,16 +69,10 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .image-container img { 
-            width: 100%; 
-            display: block;
-        }
+        .image-container img { width: 100%; display: block; }
         .caption { 
-            font-size: 0.85rem; 
-            color: var(--text-muted); 
-            text-align: center; 
-            margin-top: 16px; 
-            font-weight: 500;
+            font-size: 0.85rem; color: var(--text-muted); 
+            text-align: center; margin-top: 16px; font-weight: 500;
         }
         
         .info-box {
@@ -128,7 +117,7 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title">Daylight Greenness Trend (GCC)</h2>
+            <h2 class="card-title">Daylight Canopy Trends (GCC & RCC)</h2>
             <div id="plot-div" style="width:100%; height:400px;"></div>
         </div>
     </div>
@@ -145,10 +134,8 @@
 </div>
 
 <script>
-    // Bypass browser cache for the latest image
     document.getElementById('phenocam-img').src = "latest_image.jpg?t=" + new Date().getTime();
 
-    // Helper function to calculate a moving average for smoothing the trendline
     function calculateMovingAverage(data, windowSize) {
         return data.map((val, index, arr) => {
             const start = Math.max(0, index - windowSize + 1);
@@ -158,7 +145,6 @@
         });
     }
 
-    // Fetch and parse the CSV
     Papa.parse("phenocam_data.csv", {
         download: true,
         header: true,
@@ -166,59 +152,47 @@
         complete: function(results) {
             const rawData = results.data;
             
-            // 1. FILTER OUT NIGHTTIME DATA: Only keep rows where GCC is a valid number
-            const validData = rawData.filter(row => {
-                let val = row.gcc_median !== undefined ? row.gcc_median : row.gcc;
-                return typeof val === 'number' && !isNaN(val);
-            });
+            // Filter out nighttime/empty rows
+            const validData = rawData.filter(row => typeof row.gcc_90th === 'number' && !isNaN(row.gcc_90th));
             
-            // 2. Extract X (timestamp) and Y (median GCC) from the filtered daylight data
             const timestamps = validData.map(row => row.timestamp);
-            const rawGcc = validData.map(row => row.gcc_median !== undefined ? row.gcc_median : row.gcc);
+            const rawGcc = validData.map(row => row.gcc_90th);
+            const rawRcc = validData.map(row => row.rcc_median);
 
-            // 3. Calculate a 10-period moving average (approx 5 hours)
             const smoothedGcc = calculateMovingAverage(rawGcc, 10);
+            const smoothedRcc = calculateMovingAverage(rawRcc, 10);
 
-            // Trace 1: Raw Data (faint dots in the background)
-            const traceRaw = {
-                x: timestamps,
-                y: rawGcc,
-                mode: 'markers',
-                name: 'Raw 30-min Median',
-                marker: { color: '#cbd5e1', size: 5, opacity: 0.7 },
-                hoverinfo: 'y+x'
+            // GCC Traces (Green)
+            const traceRawGcc = {
+                x: timestamps, y: rawGcc, mode: 'markers',
+                name: 'Raw GCC (90th)', marker: { color: '#cbd5e1', size: 4, opacity: 0.7 }, hoverinfo: 'skip'
+            };
+            const traceSmoothGcc = {
+                x: timestamps, y: smoothedGcc, mode: 'lines',
+                name: 'Greenness (GCC)', line: { shape: 'spline', color: '#15803d', width: 3 }, connectgaps: true 
             };
 
-            // Trace 2: Smoothed Trendline (bold solid line connecting the days)
-            const traceSmooth = {
-                x: timestamps,
-                y: smoothedGcc,
-                mode: 'lines',
-                name: 'Smoothed Trend',
-                line: { shape: 'spline', color: '#15803d', width: 4 },
-                connectgaps: true 
+            // RCC Traces (Red)
+            const traceRawRcc = {
+                x: timestamps, y: rawRcc, mode: 'markers',
+                name: 'Raw RCC (Median)', marker: { color: '#fca5a5', size: 4, opacity: 0.5 }, hoverinfo: 'skip'
+            };
+            const traceSmoothRcc = {
+                x: timestamps, y: smoothedRcc, mode: 'lines',
+                name: 'Redness (RCC)', line: { shape: 'spline', color: '#b91c1c', width: 2 }, connectgaps: true 
             };
 
             const layout = {
                 hovermode: 'x unified',
                 margin: { l: 50, r: 20, t: 10, b: 40 },
                 legend: { orientation: "h", yanchor: "bottom", y: 1.02, xanchor: "right", x: 1 },
-                xaxis: { 
-                    showgrid: true, 
-                    gridcolor: '#f8fafc',
-                    tickformat: '%b %d\n%H:%M'
-                },
-                yaxis: { 
-                    title: 'GCC (Median)', 
-                    showgrid: true, 
-                    gridcolor: '#f1f5f9',
-                    zeroline: false
-                },
+                xaxis: { showgrid: true, gridcolor: '#f8fafc', tickformat: '%b %d\n%H:%M' },
+                yaxis: { title: 'Chromatic Coordinate', showgrid: true, gridcolor: '#f1f5f9', zeroline: false },
                 plot_bgcolor: 'rgba(0,0,0,0)',
                 paper_bgcolor: 'rgba(0,0,0,0)'
             };
 
-            Plotly.newPlot('plot-div', [traceRaw, traceSmooth], layout, {responsive: true});
+            Plotly.newPlot('plot-div', [traceRawGcc, traceSmoothGcc, traceRawRcc, traceSmoothRcc], layout, {responsive: true});
         }
     });
 </script>
