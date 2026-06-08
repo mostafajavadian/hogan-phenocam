@@ -1,0 +1,2 @@
+timestamp,gcc_mean,gcc_median,gcc_90th,rcc_median,bcc_median,exg_median,is_outlier
+2026-06-08 15:33:33,0.5484,0.5278,0.6716,0.3801,0.0809,101.0,0
