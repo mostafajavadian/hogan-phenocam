@@ -2,14 +2,14 @@ name: 30-Minute Phenocam Extraction
 
 on:
   schedule:
-    - cron: '0,30 * * * *'
-  workflow_dispatch: # Allows you to run it manually from the GitHub website
+    - cron: '0,30 * * * *' # Triggers at minute 0 and 30
+  workflow_dispatch:
 
 jobs:
   extract_gcc:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Allows the bot to commit the CSV back to the repo
+      contents: write
       
     steps:
       - name: Checkout Repository
@@ -21,15 +21,12 @@ jobs:
           python-version: '3.10'
 
       - name: Install Python Dependencies
-        run: pip install playwright opencv-python-headless numpy pandas
-
-      - name: Install Python Dependencies
         run: pip install playwright opencv-python-headless numpy pandas pytz astral
 
       - name: Install Playwright Browsers
         run: playwright install chromium
 
-      - name: Run GCC Extraction Script
+      - name: Run Phenology Extraction Script
         run: python gcc_logger.py
 
       - name: Commit and Push Updates
@@ -38,5 +35,5 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add phenocam_data.csv
           git add latest_image.jpg || true
-          git commit -m "Automated GCC and Image update [skip ci]" || echo "No changes to commit"
+          git commit -m "Automated Phenology update [skip ci]" || echo "No changes to commit"
           git push
