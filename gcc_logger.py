@@ -13,29 +13,38 @@ from playwright.async_api import async_playwright
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
-def calculate_roi_stats(image, mask_path='canopy_mask.png'):
+def calculate_advanced_phenology(image, mask_path='canopy_mask.png'):
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     if mask is None:
         print("Warning: canopy_mask.png not found. Calculating full frame.")
         mask = np.ones(image.shape[:2], dtype=np.uint8) * 255
 
+    # OpenCV loads images in BGR format
     b, g, r = cv2.split(image.astype(float))
     total = b + g + r
-    total[total == 0] = 1 
+    total[total == 0] = 1 # Prevent division by zero
     
+    # Calculate Chromatic Coordinates
     gcc = g / total
-    valid_pixels = gcc[mask == 255]
+    rcc = r / total
+    bcc = b / total
     
-    if len(valid_pixels) == 0:
+    # Calculate Excess Green Index
+    exg = (2 * g) - r - b
+    
+    # Extract only the valid pixels within the canopy mask
+    valid_mask = mask == 255
+    
+    if not np.any(valid_mask):
         return None, mask
         
     stats = {
-        'mean': np.mean(valid_pixels),
-        'median': np.median(valid_pixels),
-        'min': np.min(valid_pixels),
-        'max': np.max(valid_pixels),
-        'q25': np.percentile(valid_pixels, 25),
-        'q75': np.percentile(valid_pixels, 75)
+        'gcc_mean': np.mean(gcc[valid_mask]),
+        'gcc_median': np.median(gcc[valid_mask]),
+        'gcc_90th': np.percentile(gcc[valid_mask], 90), # The PhenoCam composite standard
+        'rcc_median': np.median(rcc[valid_mask]),
+        'bcc_median': np.median(bcc[valid_mask]),
+        'exg_median': np.median(exg[valid_mask])
     }
     
     return stats, mask
