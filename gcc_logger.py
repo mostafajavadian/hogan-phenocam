@@ -4,6 +4,7 @@ import cv2
 import os
 import csv
 import numpy as np
+import pandas as pd
 from datetime import datetime
 import pytz
 from astral import LocationInfo
@@ -19,12 +20,10 @@ def calculate_advanced_phenology(image, mask_path='canopy_mask.png'):
         print("Warning: canopy_mask.png not found. Calculating full frame.")
         mask = np.ones(image.shape[:2], dtype=np.uint8) * 255
 
-    # OpenCV loads images in BGR format
     b, g, r = cv2.split(image.astype(float))
     total = b + g + r
     total[total == 0] = 1 
     
-    # Calculate Chromatic Coordinates
     gcc = g / total
     rcc = r / total
     bcc = b / total
@@ -73,7 +72,6 @@ async def main():
     
     write_header = not os.path.exists(csv_file)
 
-    # Calculate Solar Elevation for Worcester, MA
     city = LocationInfo("Worcester", "Massachusetts", "US/Eastern", 42.2626, -71.8023)
     sun_elev = elevation(city.observer, now)
     is_daylight = sun_elev > 5.0 
@@ -88,31 +86,58 @@ async def main():
         if ret:
             stats, mask = calculate_advanced_phenology(frame)
             
+            # 1. Append the new row of data
             with open(csv_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
                 if write_header:
-                    writer.writerow(["timestamp", "gcc_mean", "gcc_median", "gcc_90th", "rcc_median", "bcc_median", "exg_median"])
+                    # Added 'is_outlier' column
+                    writer.writerow(["timestamp", "gcc_mean", "gcc_median", "gcc_90th", "rcc_median", "bcc_median", "exg_median", "is_outlier"])
                 
                 if is_daylight and stats:
                     print(f"[{timestamp_str}] Daylight (Elev: {sun_elev:.1f}°). GCC 90th: {stats['gcc_90th']:.4f}")
                     writer.writerow([
-                        timestamp_str, 
-                        round(stats['gcc_mean'], 4), 
-                        round(stats['gcc_median'], 4), 
-                        round(stats['gcc_90th'], 4), 
-                        round(stats['rcc_median'], 4), 
-                        round(stats['bcc_median'], 4),
-                        round(stats['exg_median'], 4)
+                        timestamp_str, round(stats['gcc_mean'], 4), round(stats['gcc_median'], 4), 
+                        round(stats['gcc_90th'], 4), round(stats['rcc_median'], 4), 
+                        round(stats['bcc_median'], 4), round(stats['exg_median'], 4), 0
                     ])
                 else:
                     print(f"[{timestamp_str}] Nighttime/Twilight (Elev: {sun_elev:.1f}°). Skipping data.")
-                    writer.writerow([timestamp_str, "", "", "", "", "", ""])
+                    writer.writerow([timestamp_str, "", "", "", "", "", "", 0])
 
-            # Always save the latest image with the ROI overlaid
+            # 2. Daily Outlier Detection using Pandas (IQR Method)
+            try:
+                df = pd.read_csv(csv_file)
+                df['datetime'] = pd.to_datetime(df['timestamp'])
+                df['date'] = df['datetime'].dt.date
+                
+                # Reset all flags to recalculate cleanly
+                df['is_outlier'] = 0 
+                
+                # Group by day and calculate bounds
+                grouped = df[df['gcc_90th'].notnull()].groupby('date')
+                for date, group in grouped:
+                    if len(group) >= 4: # Need enough points in a day to find outliers
+                        q1 = group['gcc_90th'].quantile(0.25)
+                        q3 = group['gcc_90th'].quantile(0.75)
+                        iqr = q3 - q1
+                        lower_bound = q1 - 1.5 * iqr
+                        upper_bound = q3 + 1.5 * iqr
+                        
+                        # Find indices of outliers and flag them
+                        outlier_indices = group[(group['gcc_90th'] < lower_bound) | (group['gcc_90th'] > upper_bound)].index
+                        df.loc[outlier_indices, 'is_outlier'] = 1
+                
+                # Clean up and overwrite CSV
+                df.drop(columns=['datetime', 'date'], inplace=True)
+                df.to_csv(csv_file, index=False)
+                print("Daily outlier check complete.")
+            except Exception as e:
+                print(f"Outlier processing skipped/failed: {e}")
+
+            # 3. Save the image
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
             cv2.imwrite("latest_image.jpg", frame)
-            print("Saved new latest_image.jpg with ROI overlay.")
                 
         else:
             print("Failed to read frame.")
